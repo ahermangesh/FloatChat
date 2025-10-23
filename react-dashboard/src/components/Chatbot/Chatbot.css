@@ -13,7 +13,7 @@
 }
 
 .chatbot-header {
-  background: #7c3aed;
+  background: #082540;
   padding: 10px 16px;
   color: white;
   display: flex;
@@ -128,15 +128,18 @@
   gap: 12px;
   max-width: 85%;
   animation: slideIn 0.3s ease-out;
+  margin-bottom: 20px;
 }
 
 .user-message {
   align-self: flex-end;
   flex-direction: row-reverse;
+  margin-bottom: 25px;
 }
 
 .bot-message {
   align-self: flex-start;
+  margin-bottom: 25px;
 }
 
 .message-avatar {
@@ -208,18 +211,37 @@
 }
 
 .bot-message .message-text {
-  background: #f3f4f6;
+  background: #f8fafc;
   color: #374151;
   border-bottom-left-radius: 4px;
   box-shadow: none;
-  border: none;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  line-height: 1.6;
+  font-size: 14px;
 }
 
 .user-message .message-text {
-  background: #e0e7ff;
-  color: #3730a3;
-  border-bottom-right-radius: 4px;
-  box-shadow: none;
+  background: none !important;
+  background-color: transparent !important;
+  color: #2d3748 !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+.user-message .message-content {
+  background: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
 }
 
 .message-time {
@@ -411,6 +433,114 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+/* Export Button Styles */
+.export-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.export-button {
+  background: #17a2b8;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  flex-shrink: 0;
+}
+
+.export-button:hover {
+  background: #138496;
+  transform: scale(1.05);
+}
+
+.export-dropdown {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 160px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.export-option {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.export-option:hover {
+  background: #f8f9fa;
+}
+
+.export-option svg {
+  color: #17a2b8;
+}
+
+/* Response Formatting Styles */
+.response-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.response-container h3 {
+  color: #2d3748;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.data-section {
+  margin-bottom: 16px;
+}
+
+.data-item {
+  margin-bottom: 8px;
+  line-height: 1.5;
+  color: #4a5568;
+}
+
+.data-item strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.analysis-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: #f7fafc;
+  border-left: 4px solid #4299e1;
+  border-radius: 4px;
+  color: #2d3748;
+  line-height: 1.6;
+}
+
+.analysis-section strong {
+  color: #1a202c;
+  font-weight: 600;
 }
 
 /* Scrollbar Styling */

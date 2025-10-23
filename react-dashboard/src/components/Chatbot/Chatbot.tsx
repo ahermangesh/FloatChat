@@ -62,7 +62,7 @@ const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: 'Hello! I\'m Dolphin, your AI assistant for oceanographic data. You can upload CSV files with ARGO float data and ask me questions. I provide different levels of detail for students vs researchers!',
+      text: '🐬 Hi! I\'m Dolphin, your ocean data assistant. Upload CSV files or ask about oceanographic data.',
       sender: 'bot',
       timestamp: new Date()
     }
@@ -74,6 +74,7 @@ const Chatbot: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [argoData, setArgoData] = useState<ArgoProfile[]>([]);
   const [csvUploaded, setCsvUploaded] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -193,23 +194,9 @@ const Chatbot: React.FC = () => {
         // Add welcome message with data info
         const welcomeMessage: Message = {
           id: Date.now().toString(),
-          text: `🌊 ARGO Ocean Data System Initialized
+          text: `🐬 Dolphin AI Ready
 
-📊 System Status: ✅ Ready
-📈 Dataset Loaded: ${parsedData.length} oceanographic profiles  
-📅 Data Period: July 2024
-🛰️ Coverage: Global ocean measurements
-
-💡 Sample Questions:
-• Simple: "What's the highest salinity?" 
-• Advanced: "Analyze the highest salinity profile with full oceanographic context"
-• Regional: "Show me Arabian Sea data"
-• Stats: "How many profiles are available?"
-
-🔬 Available Data Types:
-Temperature • Salinity • Depth/Pressure • Geographic Locations • Float Information
-
-Ready to assist with your oceanographic data analysis! 🚀`,
+📊 Ocean data loaded and ready to analyze!`,
           sender: 'bot',
           timestamp: new Date()
         };
@@ -230,6 +217,20 @@ Ready to assist with your oceanographic data analysis! 🚀`,
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showExportDropdown && !(event.target as Element).closest('.export-container')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   // Text-to-Speech function
   const speakText = (text: string) => {
@@ -459,7 +460,7 @@ Ready to assist with your oceanographic data analysis! 🚀`,
   // Generate enhanced ARGO data response
   const generateArgoResponse = (userInput: string): string => {
     if (argoData.length === 0) {
-      return "🔄 ARGO data is still loading. Please try again in a moment.";
+      return "🔄 Loading data... Please wait.";
     }
 
     const questionType = classifyQuestion(userInput);
@@ -472,20 +473,36 @@ Ready to assist with your oceanographic data analysis! 🚀`,
       });
 
       if (questionType === 'researcher') {
-        return generateResearcherSalinityResponse(highestSalinityProfile);
+        return `<div class="response-container">
+          <h3>🔬 Detailed Salinity Analysis</h3>
+          
+          <div class="data-section">
+            <div class="data-item"><strong>Highest Salinity:</strong> ${highestSalinityProfile.salinityMax} PSU</div>
+            <div class="data-item"><strong>Location:</strong> ${highestSalinityProfile.latitude}°, ${highestSalinityProfile.longitude}°</div>
+            <div class="data-item"><strong>Profile:</strong> ${highestSalinityProfile.id} (Float ${highestSalinityProfile.floatWmoId})</div>
+            <div class="data-item"><strong>Date:</strong> ${new Date(highestSalinityProfile.date).toLocaleDateString()}</div>
+          </div>
+          
+          <div class="data-section">
+            <div class="data-item"><strong>Temperature:</strong> ${highestSalinityProfile.tempMin}°C - ${highestSalinityProfile.tempMax}°C</div>
+            <div class="data-item"><strong>Depth:</strong> ~${Math.round((highestSalinityProfile.maxPressure || 0) * 1.02)}m</div>
+          </div>
+          
+          <div class="analysis-section">
+            <strong>Analysis:</strong> High salinity values indicate strong evaporation processes. This measurement represents significant ocean-atmosphere interaction in this region.
+          </div>
+        </div>`;
       } else {
-        return `📊 Highest Salinity Analysis
-
-🔍 Quick Result:
-• Highest salinity: ${highestSalinityProfile.salinityMax} PSU
-• Profile ID: ${highestSalinityProfile.id}
-• Location: (${highestSalinityProfile.latitude}°, ${highestSalinityProfile.longitude}°)
-• Date: ${new Date(highestSalinityProfile.date).toLocaleDateString()}
-
-📍 Additional Info:
-• Float ID: ${highestSalinityProfile.floatWmoId}
-• Temperature Range: ${highestSalinityProfile.tempMin}°C - ${highestSalinityProfile.tempMax}°C
-• Max Depth: ~${Math.round((highestSalinityProfile.maxPressure || 0) * 1.02)}m`;
+        return `<div class="response-container">
+          <h3>📊 Highest Salinity Found</h3>
+          
+          <div class="data-section">
+            <div class="data-item"><strong>Value:</strong> ${highestSalinityProfile.salinityMax} PSU</div>
+            <div class="data-item"><strong>Location:</strong> ${highestSalinityProfile.latitude}°, ${highestSalinityProfile.longitude}°</div>
+            <div class="data-item"><strong>Date:</strong> ${new Date(highestSalinityProfile.date).toLocaleDateString()}</div>
+            <div class="data-item"><strong>Temperature:</strong> ${highestSalinityProfile.tempMin}°C - ${highestSalinityProfile.tempMax}°C</div>
+          </div>
+        </div>`;
       }
     }
 
@@ -495,36 +512,16 @@ Ready to assist with your oceanographic data analysis! 🚀`,
         return (profile.tempMax || 0) > (max.tempMax || 0) ? profile : max;
       });
 
-      if (questionType === 'researcher') {
-        return `🌡️ Comprehensive Temperature Analysis
-
-📋 Primary Findings:
-The highest temperature recorded is ${highestTempProfile.tempMax}°C in profile ${highestTempProfile.id} (Float ${highestTempProfile.floatWmoId}) at coordinates ${highestTempProfile.latitude}°, ${highestTempProfile.longitude}° on ${new Date(highestTempProfile.date).toLocaleDateString()}.
-
-🏗️ Technical Specifications:
-• Maximum depth sampled: ${highestTempProfile.maxPressure} dbar (≈${Math.round((highestTempProfile.maxPressure || 0) * 1.02)}m)
-• Full temperature range: ${highestTempProfile.tempMin}°C - ${highestTempProfile.tempMax}°C
-• Salinity context: ${highestTempProfile.salinityMin} - ${highestTempProfile.salinityMax} PSU
-
-🌊 Oceanographic Context:
-This temperature was recorded at a maximum depth of ${highestTempProfile.maxPressure} dbar, suggesting ${(highestTempProfile.maxPressure || 0) < 1500 ? 'surface or near-surface warming typical of tropical ocean regions with strong solar heating' : 'deep water temperature variations indicating complex vertical mixing processes'}.
-
-📊 Scientific Significance:
-The measurement represents ${(highestTempProfile.tempMax || 0) > 28 ? 'tropical surface water conditions with significant implications for regional climate patterns and marine ecosystem dynamics' : 'moderate oceanic temperatures typical of temperate or sub-tropical regions'}.`;
-      } else {
-        return `🌡️ Highest Temperature Analysis
-
-🔍 Quick Result:
-• Highest temperature: ${highestTempProfile.tempMax}°C
-• Profile ID: ${highestTempProfile.id}
-• Location: (${highestTempProfile.latitude}°, ${highestTempProfile.longitude}°)
-• Date: ${new Date(highestTempProfile.date).toLocaleDateString()}
-
-📍 Additional Info:
-• Float ID: ${highestTempProfile.floatWmoId}
-• Salinity Range: ${highestTempProfile.salinityMin} - ${highestTempProfile.salinityMax} PSU
-• Max Depth: ~${Math.round((highestTempProfile.maxPressure || 0) * 1.02)}m`;
-      }
+      return `<div class="response-container">
+        <h3>🌡️ Highest Temperature</h3>
+        
+        <div class="data-section">
+          <div class="data-item"><strong>Value:</strong> ${highestTempProfile.tempMax}°C</div>
+          <div class="data-item"><strong>Location:</strong> ${highestTempProfile.latitude}°, ${highestTempProfile.longitude}°</div>
+          <div class="data-item"><strong>Date:</strong> ${new Date(highestTempProfile.date).toLocaleDateString()}</div>
+          <div class="data-item"><strong>Salinity:</strong> ${highestTempProfile.salinityMin} - ${highestTempProfile.salinityMax} PSU</div>
+        </div>
+      </div>`;
     }
 
     // Handle depth/pressure queries
@@ -533,18 +530,15 @@ The measurement represents ${(highestTempProfile.tempMax || 0) > 28 ? 'tropical 
         return (profile.maxPressure || 0) > (max.maxPressure || 0) ? profile : max;
       });
 
-      return `🌊 Depth Analysis
-
-🔍 Deepest Measurement:
-• Maximum pressure: ${deepestProfile.maxPressure} dbar
-• Approximate depth: ~${Math.round((deepestProfile.maxPressure || 0) * 1.02)} meters
-• Profile ID: ${deepestProfile.id}
-
-📍 Location & Context:
-• Coordinates: (${deepestProfile.latitude}°, ${deepestProfile.longitude}°)
-• Date: ${new Date(deepestProfile.date).toLocaleDateString()}
-• Temperature at depth: ${deepestProfile.tempMin}°C - ${deepestProfile.tempMax}°C
-• Salinity at depth: ${deepestProfile.salinityMin} - ${deepestProfile.salinityMax} PSU`;
+      return `<div class="response-container">
+        <h3>🌊 Deepest Measurement</h3>
+        
+        <div class="data-section">
+          <div class="data-item"><strong>Depth:</strong> ~${Math.round((deepestProfile.maxPressure || 0) * 1.02)}m (${deepestProfile.maxPressure} dbar)</div>
+          <div class="data-item"><strong>Location:</strong> ${deepestProfile.latitude}°, ${deepestProfile.longitude}°</div>
+          <div class="data-item"><strong>Temperature:</strong> ${deepestProfile.tempMin}°C - ${deepestProfile.tempMax}°C</div>
+        </div>
+      </div>`;
     }
 
     // Handle location queries
@@ -558,58 +552,36 @@ The measurement represents ${(highestTempProfile.tempMax || 0) > 28 ? 'tropical 
         const avgSalinityMin = Math.min(...arabianSeaProfiles.map(p => p.salinityMin || 0));
         const avgSalinityMax = Math.max(...arabianSeaProfiles.map(p => p.salinityMax || 0));
         
-        return `🌊 Arabian Sea Region Analysis
-
-📊 Summary:
-• Total profiles found: ${arabianSeaProfiles.length}
-• Salinity range: ${avgSalinityMin.toFixed(2)} - ${avgSalinityMax.toFixed(2)} PSU
-
-📍 Geographic Coverage:
-• Region: Arabian Sea (10°N-25°N, 60°E-75°E)
-• Active floats: ${new Set(arabianSeaProfiles.map(p => p.floatWmoId)).size}
-
-🔬 Key Characteristics:
-• High salinity typical of Arabian Sea evaporation patterns
-• Significant for monsoon and regional circulation studies`;
+        return `<div class="response-container">
+          <h3>🌊 Arabian Sea Data</h3>
+          
+          <div class="data-section">
+            <div class="data-item"><strong>Profiles Found:</strong> ${arabianSeaProfiles.length}</div>
+            <div class="data-item"><strong>Salinity Range:</strong> ${avgSalinityMin.toFixed(2)} - ${avgSalinityMax.toFixed(2)} PSU</div>
+            <div class="data-item"><strong>Active Floats:</strong> ${new Set(arabianSeaProfiles.map(p => p.floatWmoId)).size}</div>
+            <div class="data-item"><strong>Region:</strong> 10°N-25°N, 60°E-75°E</div>
+          </div>
+        </div>`;
       } else {
-        return `🌊 Regional Search Results
-
-❌ No profiles found in the specified Arabian Sea region (10°N-25°N, 60°E-75°E) in the current dataset.
-
-💡 Suggestion: Try asking about other regions or general oceanographic parameters.`;
+        return `❌ No Arabian Sea profiles found in current dataset.`;
       }
     }
 
     // Handle count queries
     if (input.includes('how many') || input.includes('count')) {
-      return `📊 Dataset Overview
-
-🔢 Total Records:
-• ${argoData.length} ARGO oceanographic profiles
-• Data period: July 2024
-• Geographic coverage: Global ocean regions
-
-🛰️ Float Information:
-• Active floats: ${new Set(argoData.map(p => p.floatWmoId)).size}
-• Data types: Temperature, Salinity, Pressure/Depth measurements
-
-💡 What you can ask:
-• "What's the highest salinity?"
-• "Show me temperature data"
-• "Find profiles from Arabian Sea"`;
+      return `<div class="response-container">
+        <h3>📊 Dataset Overview</h3>
+        
+        <div class="data-section">
+          <div class="data-item"><strong>Total Profiles:</strong> ${argoData.length}</div>
+          <div class="data-item"><strong>Active Floats:</strong> ${new Set(argoData.map(p => p.floatWmoId)).size}</div>
+          <div class="data-item"><strong>Coverage:</strong> Global ocean regions</div>
+        </div>
+      </div>`;
     }
 
     // Default response
-    return `🌊 ARGO Data Assistant Ready!
-
-💡 Available Queries:
-• Salinity Analysis: "What's the highest salinity?"
-• Temperature Data: "Show me temperature information"
-• Depth Analysis: "What's the deepest measurement?"
-• Regional Data: "Show me Arabian Sea profiles"
-• Dataset Info: "How many profiles are there?"
-
-📊 Current Dataset: ${argoData.length} profiles from July 2024`;
+    return `💡 Ask me about ocean data - salinity, temperature, depth, or regional profiles.`;
   };
 
   // Generate detailed researcher-level response for salinity queries
@@ -689,23 +661,23 @@ Profile ${profile.id} provides high-quality measurements suitable for advanced o
       }
     }
     
-    // Fallback to original responses for non-ARGO queries
+    // Simplified fallback responses
     if (input.includes('temperature') || input.includes('temp')) {
-      return csvUploaded ? generateArgoResponse(userInput) : 'The current sea surface temperature in the Indian Ocean ranges from 26°C to 30°C. Would you like specific data for a particular region?';
+      return csvUploaded ? generateArgoResponse(userInput) : '🌡️ Sea temperature: 26-30°C in Indian Ocean. Need specific region?';
     } else if (input.includes('salinity')) {
-      return csvUploaded ? generateArgoResponse(userInput) : 'Ocean salinity levels in our monitored areas range from 34.8 to 35.8 PSU. This data is collected by our Argo float network.';
+      return csvUploaded ? generateArgoResponse(userInput) : '🧂 Ocean salinity: 34.8-35.8 PSU. Data from Argo floats.';
     } else if (input.includes('float') || input.includes('argo')) {
-      return csvUploaded ? generateArgoResponse(userInput) : 'We currently have 10 Argo floats deployed across the Indian Ocean. 7 are active and 3 are inactive. Each float collects temperature, salinity, and depth data.';
+      return csvUploaded ? generateArgoResponse(userInput) : '🛰️ 10 Argo floats deployed. 7 active, 3 inactive.';
     } else if (input.includes('weather') || input.includes('storm')) {
-      return 'Current weather conditions are calm with moderate wave heights. No major storms detected in the region. Would you like a detailed forecast?';
+      return '🌤️ Current conditions: Calm seas, moderate waves. No storms detected.';
     } else if (input.includes('data') || input.includes('information')) {
       return csvUploaded ? 
-        `I have access to ${argoData.length} ARGO oceanographic profiles from July 2024. I can provide detailed analysis of temperature, salinity, depth measurements, float locations, and oceanographic conditions. What specific data are you looking for?` :
-        'I can provide oceanographic data including temperature, salinity, depth measurements, float locations, and weather conditions. What specific data are you looking for?';
+        `📊 Ocean data loaded. Ask about temperature, salinity, or depth.` :
+        '📊 I can provide ocean data: temperature, salinity, depth, weather. What do you need?';
     } else {
       return csvUploaded ?
-        `🌊 I'm your ARGO Ocean Data Assistant! I have ${argoData.length} oceanographic profiles loaded. Try asking: "What's the highest salinity?" or "Show me temperature data" or "How many profiles are there?"` :
-        'I\'m here to help with oceanographic data and analysis. You can ask me about water temperature, salinity levels, Argo float status, weather conditions, or any other ocean-related data.';
+        `🐬 Ocean Assistant ready! Ask me anything about ocean data.` :
+        '🐬 Hi! Ask me about ocean temperature, salinity, Argo floats, or weather conditions.';
     }
   };
 
@@ -714,6 +686,67 @@ Profile ${profile.id} provides high-quality measurements suitable for advanced o
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  // Export functions
+  const exportToCSV = () => {
+    const csvContent = messages.map(msg => {
+      const timestamp = msg.timestamp.toLocaleString();
+      const sender = msg.sender === 'bot' ? 'Dolphin AI' : 'User';
+      const text = msg.text.replace(/"/g, '""'); // Escape quotes
+      return `"${timestamp}","${sender}","${text}"`;
+    }).join('\n');
+    
+    const headers = '"Timestamp","Sender","Message"\n';
+    const fullCSV = headers + csvContent;
+    
+    const blob = new Blob([fullCSV], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `dolphin-chat-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    setShowExportDropdown(false);
+  };
+
+  const exportToPDF = () => {
+    // Create a simple HTML structure for PDF conversion
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Dolphin AI Chat Export</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .message { margin-bottom: 15px; padding: 10px; border-radius: 8px; }
+            .user { background-color: #e3f2fd; margin-left: 20%; }
+            .bot { background-color: #f0f8ff; margin-right: 20%; }
+            .timestamp { font-size: 12px; color: #666; }
+            .sender { font-weight: bold; margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🐬 Dolphin AI Chat Export</h1>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+          </div>
+          ${messages.map(msg => `
+            <div class="message ${msg.sender}">
+              <div class="sender">${msg.sender === 'bot' ? '🐬 Dolphin AI' : '👤 User'}</div>
+              <div>${msg.text}</div>
+              <div class="timestamp">${msg.timestamp.toLocaleString()}</div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `dolphin-chat-${new Date().toISOString().split('T')[0]}.html`;
+    link.click();
+    setShowExportDropdown(false);
   };
 
   return (
@@ -748,7 +781,7 @@ Profile ${profile.id} provides high-quality measurements suitable for advanced o
               </div>
             )}
             <div className="message-content">
-              <div className="message-text">{message.text}</div>
+              <div className="message-text" dangerouslySetInnerHTML={{ __html: message.text }}></div>
               <div className="message-time">
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -784,11 +817,43 @@ Profile ${profile.id} provides high-quality measurements suitable for advanced o
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={isListening ? "Listening..." : "Ask me about ocean data or click 🎤 to speak..."}
+            placeholder={isListening ? "Listening..." : "Ocean Insights Now... "}
             className="message-input"
             rows={1}
             disabled={isListening}
           />
+          
+          {/* Export Button with Dropdown */}
+          <div className="export-container">
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="export-button"
+              title="Export chat history"
+              type="button"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                <path d="M12,17L17,12H14V8H10V12H7L12,17Z"/>
+              </svg>
+            </button>
+            
+            {showExportDropdown && (
+              <div className="export-dropdown">
+                <button onClick={exportToCSV} className="export-option">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z"/>
+                  </svg>
+                  Export as CSV
+                </button>
+                <button onClick={exportToPDF} className="export-option">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2Z"/>
+                  </svg>
+                  Export as HTML
+                </button>
+              </div>
+            )}
+          </div>
           
           {/* Voice Controls */}
           {isVoiceSupported && (
