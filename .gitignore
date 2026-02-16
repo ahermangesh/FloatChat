@@ -359,6 +359,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Next.js
+.next/
+out/
+build/
+.vercel/
+
 # Streamlit
 .streamlit/
 streamlit_cache/
@@ -374,6 +380,8 @@ media/
 # IDEs and editors
 .vscode/
 .idea/
+.cursor/
+.github/
 *.swp
 *.swo
 *~
